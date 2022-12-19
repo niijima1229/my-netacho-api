@@ -1,0 +1,45 @@
+name: Deploy Prod
+on:
+  push:
+    branches:
+      - master
+env:
+  SERVICE_NAME: my-netacho
+  ENV_NAME: prod
+  ROLE_TO_ASSUME: arn:aws:iam::196189526378:role/my-netacho-github-action
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          role-session-name: github-actions-${{ github.run_id }}
+          aws-region: ap-northeast-1
+
+      - name: Get AWS Account
+        run: aws sts get-caller-identity
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build Web
+        id: build-web
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.SERVICE_NAME }}-${{ env.ENV_NAME }}-web
+          DOCKER_FILE: ./docker/nginx/Dockerfile.prod
+        run: |
+          docker build -t ${ECR_REPOSITORY} . -f ${DOCKER_FILE}
+          docker tag ${ECR_REPOSITORY}:latest ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+          docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
+          echo "::set-output name=image::${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
