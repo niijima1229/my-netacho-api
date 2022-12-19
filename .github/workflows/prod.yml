@@ -44,7 +44,7 @@ jobs:
           docker push ${ECR_REGISTRY}/${ECR_REPOSITORY}:latest
           echo "::set-output name=image::${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
 
-        - name: Build App
+      - name: Build App
         id: build-app
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
