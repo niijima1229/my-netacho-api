@@ -60,6 +60,7 @@ jobs:
         id: create-taskdef
         run: |
           aws ecs describe-task-definition --task-definition ${{ env.SERVICE_NAME }}-task | jq ".taskDefinition" | jq "del(.compatibilities)" | jq "del(.taskDefinitionArn)" | jq "del(.requiresAttributes)" | jq "del(.revision)" | jq "del(.status)" > ./task_definition.json
+          cat ./task_definition.json
       - name: Fill in the new image ID Web
         id: task-def-web
         uses: aws-actions/amazon-ecs-render-task-definition@v1
